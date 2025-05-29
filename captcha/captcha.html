@@ -2,49 +2,306 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Joel</title>
+  <title>MemoryPattern</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style type="text/css">
     html,
     body {
-      background: pink;
+      background: black;
       margin: 0;
       padding: 0;
       font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    #fading-images {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 25px;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .fading-image {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      object-fit: contain;
+      animation: fadeInOut 3s ease-in-out forwards;
+    }
+
+    @keyframes fadeInOut {
+      0% { opacity: 0; }
+      20% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { opacity: 0; }
     }
 
     #captcha-container {
-      background: white;
+      background-image: url('images/background.png');
       width: 390px;
       height: 300px;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      position: relative;
+      z-index: 1;
     }
 
-    /* Your style here... */
+    #image-display {
+      width: 125px;
+      height: 125px;
+      margin: 35px auto;
+      display: none;
+    }
+
+    #image-display img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    #input-sequence {
+      background-image: url('images/sequence.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-color: transparent;
+      width: 80%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
+      text-align: center;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      color: #e5e5e5;
+      border: 1px solid #333;
+    }
+
+    #button-container {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .image-button {
+      width: 60px;
+      height: 60px;
+      background: none;
+      border: 2px solid #333;
+      border-radius: 5px;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .image-button img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .image-button:hover {
+      border-color: #ffffff;
+    }
+
+    #submit {
+      margin-top: 15px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-image: url('images/submit.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      color: #e5e5e5;
+      border: 2px solid #333;
+      cursor: pointer;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    #submit:hover {
+      border-color: #ffffff;
+    }
+
+    #message {
+      margin-top: 10px;
+      font-weight: bold;
+      font-size: 25px;
+      color: #e5e5e5;
+      line-height: 1.4;
+      -webkit-text-stroke: 2px #333;
+      text-stroke: 2px #333;
+    }
   </style>
 </head>
 
 <body>
+  <div id="fading-images"></div>
   <div id="captcha-container">
-    <!-- Add your CAPTCHA here: -->
-    Hello world!
-
-    <!-- We've added a sample button. Feel free to remove it: -->
-    <button id="solve">
-      Solve!
-    </button>
+    <div id="image-display">
+      <img id="current-image" src="" alt="Sequence Image">
+    </div>
+    <input type="text" id="input-sequence" readonly placeholder="Input reverse pattern order">
+    <div id="button-container"></div>
+    <button id="submit">SUBMIT</button>
+    <div id="message"></div>
   </div>
 
   <script type="text/javascript">
-    (function(window, document){
-      // This is how you tell the parent window that the CAPTCHA was successful.
+    (function(window, document) {
+
       function captchaSuccess() {
         window.top.postMessage("success", '*');
       }
 
-      // Your CAPTCHA code goes here, we've added a simple example below:
-      document.getElementById('solve')
-           .addEventListener('click', () => captchaSuccess());
+      const images = [
+          { url: 'images/1.png', number: 1 },
+          { url: 'images/2.png', number: 2 },
+          { url: 'images/3.png', number: 3 },
+          { url: 'images/4.png', number: 4 }
+      ];
+
+      const fadingImages = [
+          { url: 'images/a.png' },
+          { url: 'images/b.png' },
+          { url: 'images/c.png' },
+          { url: 'images/d.png' }
+      ];
+
+      const imageDisplay = document.getElementById('image-display');
+      const currentImage = document.getElementById('current-image');
+      const inputSequence = document.getElementById('input-sequence');
+      const buttonContainer = document.getElementById('button-container');
+      const submitButton = document.getElementById('submit');
+      const message = document.getElementById('message');
+
+      let sequence = [];
+      let userInput = [];
+      let reversedSequence = [];
+
+      function getRandomSequenceLength() {
+        return Math.floor(Math.random() * 5) + 5;
+      }
+
+      function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function startFadingImages() {
+        const fadingContainer = document.getElementById('fading-images');
+        const maxX = window.innerWidth - 60;
+        const minY = 10;
+        const maxY = 40;
+
+        function createFadingImage() {
+          const randomImage = fadingImages[Math.floor(Math.random() * fadingImages.length)];
+          const img = document.createElement('img');
+          img.src = randomImage.url;
+          img.className = 'fading-image';
+          img.alt = `Fading Image`;
+          const x = Math.random() * maxX;
+          const y = minY + Math.random() * (maxY - minY);
+          img.style.left = `${x}px`;
+          img.style.bottom = `${y}px`;
+          fadingContainer.appendChild(img);
+          img.addEventListener('animationend', () => {
+            img.remove();
+          });
+          setTimeout(createFadingImage, 200 + Math.random() * 1000);
+        }
+        createFadingImage();
+      }
+
+      function startGame() {
+        sequence = [];
+        userInput = [];
+        reversedSequence = [];
+        inputSequence.value = '';
+        buttonContainer.innerHTML = '';
+        message.textContent = '';
+        submitButton.style.display = 'none';
+        inputSequence.style.display = 'none';
+
+        document.getElementById('fading-images').innerHTML = '';
+        startFadingImages();
+
+        const sequenceLength = getRandomSequenceLength();
+        console.log('Sequence Length:', sequenceLength);
+
+        for (let i = 0; i < sequenceLength; i++) {
+          const randomIndex = Math.floor(Math.random() * images.length);
+          sequence.push(images[randomIndex]);
+        }
+        console.log('Sequence:', sequence.map(img => img.number));
+        reversedSequence = [...sequence].reverse().map(img => img.number);
+
+        let index = 0;
+        imageDisplay.style.display = 'block';
+        function showNextImage() {
+          if (index < sequence.length) {
+            currentImage.src = sequence[index].url;
+            index++;
+            setTimeout(showNextImage, 1000);
+          } else {
+
+            imageDisplay.style.display = 'none';
+            inputSequence.style.display = 'block';
+            showButtons();
+            submitButton.style.display = 'block';
+          }
+        }
+        showNextImage();
+      }
+
+
+      function showButtons() {
+        buttonContainer.innerHTML = '';
+        images.forEach(image => {
+          const button = document.createElement('button');
+          button.className = 'image-button';
+          const img = document.createElement('img');
+          img.src = image.url;
+          img.alt = `Image ${image.number}`;
+          button.appendChild(img);
+          button.addEventListener('click', () => {
+            userInput.push(image.number);
+            inputSequence.value = userInput.join(' ');
+          });
+          buttonContainer.appendChild(button);
+        });
+      }
+
+      function verifySequence() {
+        const isCorrect = userInput.length === reversedSequence.length &&
+                          userInput.every((num, i) => num === reversedSequence[i]);
+        if (isCorrect) {
+          message.textContent = 'You are very smart!';
+          message.style.color = 'blue';
+          captchaSuccess();
+        } else {
+          message.textContent = 'You are wrong, try again!';
+          message.style.color = 'red';
+          setTimeout(startGame, 1000);
+        }
+      }
+
+      submitButton.addEventListener('click', verifySequence);
+
+      startGame();
 
     })(window, document);
   </script>
