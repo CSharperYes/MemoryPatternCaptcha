@@ -4,7 +4,6 @@
   <meta charset="utf-8">
   <title>MemoryPattern</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
   <style type="text/css">
     html,
     body {
@@ -165,17 +164,17 @@
       }
 
       const images = [
-          { url: 'images/1.png', number: 1 },
-          { url: 'images/2.png', number: 2 },
-          { url: 'images/3.png', number: 3 },
-          { url: 'images/4.png', number: 4 }
+        { url: 'images/1.png', number: 1 },
+        { url: 'images/2.png', number: 2 },
+        { url: 'images/3.png', number: 3 },
+        { url: 'images/4.png', number: 4 }
       ];
 
       const fadingImages = [
-          { url: 'images/a.png' },
-          { url: 'images/b.png' },
-          { url: 'images/c.png' },
-          { url: 'images/d.png' }
+        { url: 'images/a.png' },
+        { url: 'images/b.png' },
+        { url: 'images/c.png' },
+        { url: 'images/d.png' }
       ];
 
       const imageDisplay = document.getElementById('image-display');
@@ -188,17 +187,10 @@
       let sequence = [];
       let userInput = [];
       let reversedSequence = [];
+      let fadingTimeout = null;
 
       function getRandomSequenceLength() {
         return Math.floor(Math.random() * 5) + 5;
-      }
-
-      function shuffle(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [array[i], array[j]] = [array[j], array[i]];
-        }
-        return array;
       }
 
       function startFadingImages() {
@@ -221,12 +213,14 @@
           img.addEventListener('animationend', () => {
             img.remove();
           });
-          setTimeout(createFadingImage, 200 + Math.random() * 1000);
+          fadingTimeout = setTimeout(createFadingImage, 200 + Math.random() * 1000);
         }
         createFadingImage();
       }
 
       function startGame() {
+        if (fadingTimeout) clearTimeout(fadingTimeout);
+
         sequence = [];
         userInput = [];
         reversedSequence = [];
@@ -235,38 +229,38 @@
         message.textContent = '';
         submitButton.style.display = 'none';
         inputSequence.style.display = 'none';
+        inputSequence.value = '';
 
         document.getElementById('fading-images').innerHTML = '';
         startFadingImages();
 
         const sequenceLength = getRandomSequenceLength();
-        console.log('Sequence Length:', sequenceLength);
-
         for (let i = 0; i < sequenceLength; i++) {
           const randomIndex = Math.floor(Math.random() * images.length);
-          sequence.push(images[randomIndex]);
+          sequence.push(images[randomIndex].number);
         }
-        console.log('Sequence:', sequence.map(img => img.number));
-        reversedSequence = [...sequence].reverse().map(img => img.number);
+
+        reversedSequence = [...sequence].reverse();
 
         let index = 0;
         imageDisplay.style.display = 'block';
+
         function showNextImage() {
           if (index < sequence.length) {
-            currentImage.src = sequence[index].url;
+            const imgObj = images.find(img => img.number === sequence[index]);
+            currentImage.src = imgObj.url;
             index++;
             setTimeout(showNextImage, 1000);
           } else {
-
             imageDisplay.style.display = 'none';
             inputSequence.style.display = 'block';
             showButtons();
             submitButton.style.display = 'block';
           }
         }
+
         showNextImage();
       }
-
 
       function showButtons() {
         buttonContainer.innerHTML = '';
